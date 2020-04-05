@@ -1,2 +1,62 @@
-# react
- Learn and copy react
+# [react](https://github.com/careteenL/react)
+[![](https://img.shields.io/badge/Powered%20by-react-brightgreen.svg)](https://github.com/careteenL/react)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/careteenL/react/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/careteenL/react.svg?branch=master)](https://travis-ci.org/careteenL/react)
+[![npm](https://img.shields.io/badge/npm-0.1.0-orange.svg)](https://www.npmjs.com/package/@careteen/react)
+[![NPM downloads](http://img.shields.io/npm/dm/@careteen/react.svg?style=flat-square)](http://www.npmtrends.com/@careteen/react)
+
+<!-- [English Document](./README.en_US.md) -->
+
+学习并仿写`react`，目前已提供基础功能。
+
+- [ ] React
+  - [x] Component
+  - [x] createElement
+  - [ ] Children
+    - [ ] map
+- [ ] ReactDOM
+  - [ ] render
+- [ ] 虚拟DOM
+- [ ] DOM-DIFF
+
+
+> [示例](./examples)
+
+## 快速使用
+
+安装
+```shell
+npm i -S @careteen/react
+```
+
+使用方式和`react`一样
+
+```js
+// TODO
+```
+
+
+## issue模板
+
+- [Issue Template](./ISSUETEMPLATE.md)
+
+## 贡献者指南
+
+clone仓库并引入依赖
+```shell
+git clone git@github.com:careteenL/react.git
+npm install
+```
+开始开发：）
+
+...
+
+启动本地服务器编写示例
+```shell
+npm run example
+```
+- [Contributors](https://github.com/careteenL/react/graphs/contributors)
+
+## 更新日志
+
+- [Changelog](./CHANGELOG.md)
