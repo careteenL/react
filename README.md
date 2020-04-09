@@ -10,14 +10,26 @@
 学习并仿写`react`，目前已提供基础功能。
 
 - [ ] React
-  - [x] Component
+  - [ ] Class Component
+    - [ ] LifeCycle
+    - [ ] setState
+  - [ ] Function Component
+    - [ ] hooks
+      - [ ] useState
   - [x] createElement
   - [ ] Children
-    - [ ] map
+    - [x] map
+      - flat
+      - key
+  - [ ] ref
 - [ ] ReactDOM
   - [ ] render
-- [ ] 虚拟DOM
-- [ ] DOM-DIFF
+- [ ] Virtual DOM
+  - [ ] DOM-DIFF
+- [ ] HOC
+
+- [x] [Redux](https://github.com/careteenL/redux)
+- [x] [React-Redux](https://github.com/careteenL/redux/blob/master/react-redux/index.js)
 
 
 > [示例](./examples)
