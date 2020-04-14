@@ -12,7 +12,8 @@
 - [ ] React
   - [ ] Class Component
     - [ ] LifeCycle
-    - [ ] setState
+    - [x] setState
+    - [x] syntheticEvent
   - [ ] Function Component
     - [ ] hooks
       - [ ] useState
@@ -23,8 +24,8 @@
       - key
   - [ ] ref
 - [ ] ReactDOM
-  - [ ] render
-- [ ] Virtual DOM
+  - [x] render
+- [x] Virtual DOM
   - [ ] DOM-DIFF
 - [ ] HOC
 
