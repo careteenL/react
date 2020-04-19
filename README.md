@@ -26,7 +26,7 @@
 - [ ] ReactDOM
   - [x] render
 - [x] Virtual DOM
-  - [ ] DOM-DIFF
+  - [x] DOM-DIFF
 - [ ] HOC
 
 - [x] [Redux](https://github.com/careteenL/redux)
