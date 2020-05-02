@@ -119,6 +119,10 @@ function diff(parentNode, oldChildrenElements, newChildrenElements) {
         });
       }
       newChildElement._mountIndex = i;//更新挂载索引
+    } else {
+      if (oldChildrenElements[i].componentInstance && oldChildrenElements[i].componentInstance.componentWillUnmount) {
+        oldChildrenElements[i].componentInstance.componentWillUnmount();
+      }
     }
   }
   for (let oldKey in oldChildrenElementsMap) {
@@ -169,6 +173,9 @@ function updateClassComponent(oldElement, newElement) {
   let componentInstance = oldElement.componentInstance;//获取老的类组件实例 
   let updater = componentInstance.$updater;
   let nextProps = newElement.props;//新的属性对象
+  if (componentInstance.componentWillReceiveProps) {
+    componentInstance.componentWillReceiveProps(nextProps);
+  }
   updater.emitUpdate(nextProps);
 }
 //如果是要更新一个函数组件 1.拿 到老元素 2.重新执行函数组件拿 到新的元素 进行对比
@@ -215,6 +222,9 @@ function createFunctionComponentDOM(element) {
 function createClassComponentDOM(element) {
   let { type: ClassCounter, props } = element;
   let componentInstance = new ClassCounter(props);//创建一个ClassCounter组件的实例
+  if (componentInstance.componentWillMount) {
+    componentInstance.componentWillMount();
+  }
   //当创建类组件实例 后，会在类组件的虚拟DOM对象上添一个属性componentInstance,指向类组件实例 
   element.componentInstance = componentInstance;//以后组件运行当中componentInstance是不变的
   let renderElement = componentInstance.render();
@@ -223,6 +233,9 @@ function createClassComponentDOM(element) {
   componentInstance.renderElement = renderElement;
   let newDOM = createDOM(renderElement);
   renderElement.dom = newDOM;
+  if (componentInstance.componentDidMount) {
+    componentInstance.componentDidMount();
+  }
   // element.componentInstance.renderElement.dom=DIV真实DOM元素
   return newDOM;
 }
