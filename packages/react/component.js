@@ -65,7 +65,10 @@ class Updater {
     if (pendingStates.length > 0) {
       pendingStates.forEach(nextState => {
         if (isFunction(nextState)) {
-          state = nextState.call(componentInstance, state);
+          state = {
+            ...state,
+            ...nextState.call(componentInstance, state)
+          };
         } else {
           state = {
             ...state,
@@ -80,10 +83,11 @@ class Updater {
 }
 
 function shouldUpdate(componentInstance, nextProps, nextState) { //判断是否要更新
+  let scu = componentInstance.shouldComponentUpdate &&
+    !componentInstance.shouldComponentUpdate(nextProps, nextState);
   componentInstance.props = nextProps;
   componentInstance.state = nextState;
-  if (componentInstance.shouldComponentUpdate &&
-    !componentInstance.shouldComponentUpdate(nextProps, nextState)) {
+  if (scu) {
     return false; // 不更新
   }
   componentInstance.forceUpdate(); //让组件强行更新
@@ -100,21 +104,22 @@ class Component {
     this.$updater.addState(partialState);
   }
   forceUpdate() { //进行组件实际更新
-    console.log('forceUpdate');
     //componentInstance.renderElement = renderElement;
     let {
       props,
       state,
-      renderElement: oldRenderElement
+      renderElement: oldRenderElement,
+      getSnapshotBeforeUpdate
     } = this;
     if (this.componentWillUpdate) {
       this.componentWillUpdate(); //组件将要更新
     }
-    let newRenderElement = this.render();
+    let extraArgs = getSnapshotBeforeUpdate && getSnapshotBeforeUpdate();
+    let newRenderElement = this.render(); //重新渲染获取新的React元素
     let currentElement = compareTwoElements(oldRenderElement, newRenderElement);
     this.renderElement = currentElement;
     if (this.componentDidUpdate) {
-      this.componentDidUpdate(); //组件更新完成
+      this.componentDidUpdate(props, state, extraArgs); //组件更新完成
     }
   }
 }

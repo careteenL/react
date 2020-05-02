@@ -1,5 +1,6 @@
 import { TEXT, ELEMENT, CLASS_COMPONENT, FUNCTION_COMPONENT, INSERT, REMOVE, MOVE } from './constants';
 import { onlyOne, setProps, flatten, patchProps } from './utils';
+import { unstable_batchedUpdates } from '../react-dom';
 let updateDepth = 0;
 let diffQueue = [];//这是一个补丁包，记录了哪些节点需要删除 ，哪些节点需要添加
 export function compareTwoElements(oldRenderElement, newRenderElement) {
@@ -28,16 +29,18 @@ function updateElement(oldElement, newElement) {
       currentDOM.textContent = newElement.content;
   } else if (oldElement.$$typeof === ELEMENT) {//如果是元素类型 span div p
     // 先更新父节点的属性，再比较更新子节点
-    updateDOMProperties(currentDOM, oldElement.props, newElement.props);
     updateChildrenElements(currentDOM, oldElement.props.children, newElement.props.children);
+    updateDOMProperties(currentDOM, oldElement.props, newElement.props);
     //会把newElement的props赋给oldElement.props
-    oldElement.props = newElement.props;
+    //如果当前是element元素。会把newElement.props(包括 children) 赋给oldElement.props 
+    oldElement.props = newElement.props;//赋完值之后，老的虚拟DOM就没有，使用新虚拟DOM了元素
   } else if (oldElement.$$typeof === FUNCTION_COMPONENT) {
     updateFunctionComponent(oldElement, newElement);
   } else if (oldElement.$$typeof === CLASS_COMPONENT) {
     updateClassComponent(oldElement, newElement);
   }
 }
+//oldChildrenElements=[[]] []  newChildrenElements=[[div]] [div] [div,div]
 function updateChildrenElements(dom, oldChildrenElements, newChildrenElements) {
   updateDepth++;//每进入一个新的子层级，就让updateDepth++
   diff(dom, oldChildrenElements, newChildrenElements, diffQueue);
@@ -119,9 +122,10 @@ function diff(parentNode, oldChildrenElements, newChildrenElements) {
         });
       }
       newChildElement._mountIndex = i;//更新挂载索引
-    } else {
-      if (oldChildrenElements[i].componentInstance && oldChildrenElements[i].componentInstance.componentWillUnmount) {
-        oldChildrenElements[i].componentInstance.componentWillUnmount();
+    } else {//newChildElement==null
+      let newKey = i.toString();
+      if (oldChildrenElementsMap[newKey].componentInstance && oldChildrenElementsMap[newKey].componentInstance.componentWillUnmount) {
+        oldChildrenElementsMap[newKey].componentInstance.componentWillUnmount();
       }
     }
   }
@@ -147,8 +151,10 @@ function getNewChildrenElementsMap(oldChildrenElementsMap, newChildrenElements) 
       if (canDeepCompare(oldChildElement, newChildElement)) {
         //在此处递归，更新父元素的时候，会递归更新每一个子元素
         //compareTwoElements 内部会判断 updateElement
-        compareTwoElements(oldChildElement, newChildElement);//复用老的DOM节点，用新属性更新这个DOM节点
+        //newChildElement._mountIndex = i;
+        updateElement(oldChildElement, newChildElement);//复用老的DOM节点，用新属性更新这个DOM节点
         newChildrenElements[i] = oldChildElement;//复用老的虚拟DOM节点
+        //newChildrenElements[i]._mountIndex = i;
       }// key是新的元素的key,值是对应虚拟DOM。
       newChildrenElementsMap[newKey] = newChildrenElements[i];
     }
@@ -170,11 +176,21 @@ function getChildrenElementsMap(oldChildrenElements) {
   return oldChildrenElementsMap;
 }
 function updateClassComponent(oldElement, newElement) {
-  let componentInstance = oldElement.componentInstance;//获取老的类组件实例 
+  //类组件的实例永远只有一个componentInstance
+  let componentInstance = newElement.componentInstance = oldElement.componentInstance;//获取老的类组件实例 
   let updater = componentInstance.$updater;
   let nextProps = newElement.props;//新的属性对象
+  if (oldElement.type.contextType) {
+    componentInstance.context = oldElement.type.contextType.Provider.value;
+  }
   if (componentInstance.componentWillReceiveProps) {
     componentInstance.componentWillReceiveProps(nextProps);
+  }
+  if (newElement.type.getDerivedStateFromProps) {
+    let newState = newElement.type.getDerivedStateFromProps(nextProps, componentInstance.state);
+    if (newState) {
+      componentInstance.state = { ...componentInstance.state, ...newState };
+    }
   }
   updater.emitUpdate(nextProps);
 }
@@ -183,6 +199,7 @@ function updateFunctionComponent(oldElement, newElement) {
   let oldRenderElement = oldElement.renderElement;//获取老的渲染出来的元素
   let newRenderElement = newElement.type(newElement.props);// newElement.type=FunctionCounter
   let currentElement = compareTwoElements(oldRenderElement, newRenderElement);
+  newElement.renderElement = currentElement;
 }
 function updateDOMProperties(dom, oldProps, newProps) {
   patchProps(dom, oldProps, newProps);
@@ -220,10 +237,22 @@ function createFunctionComponentDOM(element) {
   //element.renderElement.dom=DIV真实DOM元素
 }
 function createClassComponentDOM(element) {
-  let { type: ClassCounter, props } = element;
+  let { type: ClassCounter, ref, props } = element;
   let componentInstance = new ClassCounter(props);//创建一个ClassCounter组件的实例
+  if (ClassCounter.contextType) {
+    componentInstance.context = ClassCounter.contextType.Provider.value;
+  }
+  if (ref) {
+    ref.current = componentInstance;
+  }
   if (componentInstance.componentWillMount) {
     componentInstance.componentWillMount();
+  }
+  if (ClassCounter.getDerivedStateFromProps) {
+    let newState = ClassCounter.getDerivedStateFromProps(props, componentInstance.state);
+    if (newState) {
+      componentInstance.state = { ...componentInstance.state, ...newState };
+    }
   }
   //当创建类组件实例 后，会在类组件的虚拟DOM对象上添一个属性componentInstance,指向类组件实例 
   element.componentInstance = componentInstance;//以后组件运行当中componentInstance是不变的
@@ -234,7 +263,7 @@ function createClassComponentDOM(element) {
   let newDOM = createDOM(renderElement);
   renderElement.dom = newDOM;
   if (componentInstance.componentDidMount) {
-    componentInstance.componentDidMount();
+    unstable_batchedUpdates(componentInstance.componentDidMount.bind(componentInstance));
   }
   // element.componentInstance.renderElement.dom=DIV真实DOM元素
   return newDOM;
@@ -246,16 +275,19 @@ let element = React.createElement('button',
 );
  */
 function createNativeDOM(element) {
-  let { type, props } = element;// span button div
+  let { type, ref, props } = element;// span button div
   let dom = document.createElement(type);// 真实的BUTTON DOM对象
   //1.创建此虚拟DOM节点的子节点
-  createDOMChildren(dom, element.props.children);
+  createDOMChildren(dom, element);
   setProps(dom, props);
+  if (ref) {
+    ref.current = dom;
+  }
   //2.给此DOM元素添加属性
   return dom;
 }
-function createDOMChildren(parentNode, children) {
-  children && flatten(children).forEach((child, index) => {
+function createDOMChildren(parentNode, element) {
+  element.props.children && element.props.children.forEach((child, index) => {
     //child其实是虚拟DOM，我们会在虚拟DOM加一个属性_mountIndex,指向此虚拟DOM节点在父节点中的索引
     //在后面我们做dom-diff的时候会变得非常非常重要
     child._mountIndex = index;
