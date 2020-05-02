@@ -11,27 +11,29 @@
 
 - [ ] React
   - [ ] Class Component
-    - [ ] LifeCycle
+    - [x] LifeCycle
+      - old
+      - new
     - [x] setState
     - [x] syntheticEvent
   - [ ] Function Component
+    - [x] basic
     - [ ] hooks
       - [ ] useState
   - [x] createElement
-  - [ ] Children
+  - [x] Children
     - [x] map
       - flat
       - key
-  - [ ] ref
+  - [x] ref
 - [ ] ReactDOM
   - [x] render
+  - [x] unstable_batchedUpdates
 - [x] Virtual DOM
   - [x] DOM-DIFF
-- [ ] HOC
 
 - [x] [Redux](https://github.com/careteenL/redux)
 - [x] [React-Redux](https://github.com/careteenL/redux/blob/master/react-redux/index.js)
-
 
 > [示例](./examples)
 
