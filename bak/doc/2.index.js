@@ -26,7 +26,7 @@ class App extends Component {
   }
 }
 debugger
-let element = React.createElement(App, { title: 'zhufeng' });
+let element = React.createElement(App, { title: 'careteen' });
 /* let instance = new App();
 let renderedElement = instance.render();
  */
