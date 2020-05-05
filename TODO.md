@@ -7,3 +7,8 @@
 - [ ] 实现Fiber架构下的组件渲染和副作用收集提交
 - [ ] 实现Fiber中的调和和双缓冲优化策略
 - [ ] 实现useReducer和useState等Hooks
+
+- [ ] expirationTime 任务的优先级 任务调度 超时时间的处理
+- [ ] reconcile domdiff的优化key处理
+- [ ] 合成事件 SyntheticEvent
+- [ ] ref useEffect

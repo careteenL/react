@@ -9,7 +9,9 @@
 
 学习并仿写`react`，目前已提供基础功能。
 
-- [ ] React
+- [ ] React16
+  - [ ] Fiber
+- [ ] React15
   - [ ] Class Component
     - [x] LifeCycle
       - old
