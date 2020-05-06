@@ -5,6 +5,9 @@
 ### 目录
 
 - [ ] 浏览器任务调度策略和渲染流程
+- [ ] 链表
+  - 模拟setState
+- [ ] Fiber是什么
 - [ ] 实现React16下的虚拟DOM
 - [ ] 实现Fiber的数据结构和遍历算法
 - [ ] 实现Fiber架构下可中断和恢复的的任务调度
@@ -48,5 +51,72 @@ TODO 简易示例
 
 ### 链表
 
-TODO 示例
-> [更多关于链表实现和使用](https://github.com/careteenL/data-structure_algorithm/blob/0816-leetcode/src/data-structure/linked-list.md)
+由于数组的大小是固定的，从数组的起点或者中间插入或移除项的成本很高。链表相对于传统的数组的优势在于添加或移除元素的时候不需要移动其他元素，**需要添加和移除很多元素时，最好的选择是链表，而非数组。** 链表在React的Fiber架构和Hooks实现发挥很大的作用。
+
+#### 模拟setState
+
+TODO 手绘链表执行图
+
+如上可以使用链表实现类似于`React的setState方法`。
+
+```js
+// 表示一个节点
+class Update {
+  constructor(payload, nextUpdate) {
+    this.payload = payload
+    this.nextUpdate = nextUpdate
+  }
+}
+```
+一个节点需要`payload`挂载数据，`nextUpdate`指向下一个节点。
+```js
+// 模拟链表
+class UpdateQueue {
+  constructor() {
+    this.baseState = null
+    this.firstUpdate = null
+    this.lastUpdate = null
+  }
+  enqueue(update) {
+    if (!this.firstUpdate) {
+      this.firstUpdate = this.lastUpdate = update
+    } else {
+      this.lastUpdate.nextUpdate = update
+      this.lastUpdate = update
+    }
+  }
+}
+```
+链表初始化时需要`baseState`存放数据，`firstUpdate`指向第一个节点，`lastUpdate`指向最后一个节点。
+
+以及`enqueue`将节点串联起来。
+```js
+const isFunction = (func) => {
+  return typeof func === 'function'
+}
+class UpdateQueue {
+  forceUpdate() {
+    let currentState = this.baseState || {}
+    let currentUpdate = this.firstUpdate
+    while(currentUpdate) {
+      const nextState = isFunction(currentUpdate.payload) ? currentUpdate.payload(currentState) : currentUpdate.payload
+      currentState = {
+        ...currentState,
+        ...nextState
+      }
+      currentUpdate = currentUpdate.nextUpdate
+    }
+    this.firstUpdate = this.lastUpdate = null
+    return this.baseState = currentState
+  }
+}
+```
+还需要`forceUpdate`将所有节点挂载的数据合并。类似于`React的setState`参数可对象可函数。
+
+> [更多关于链表的实现和使用](https://github.com/careteenL/data-structure_algorithm/blob/0816-leetcode/src/data-structure/linked-list.md)
+
+### Fiber是什么
+
+#### 为什么需要Fiber
+
+#### Fiber如何工作
