@@ -41,7 +41,7 @@ TODO 手绘一个帧
   > 如果你还不了解[requestAnimationFrame](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/requestAnimationFrame)，前往mdn查看实现的进度条示例。
 
 在合成后还存在一个`空闲阶段`，即合成及之前的所有步骤耗时若不足`16.66ms`，剩下的时间浏览器为我们提供了`requestIdleCallback`进行调用，对其充分利用。
-  > [requestIdleCallback](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/requestIdleCallback)目前只支持chrome，需要[polyfill](./requestIdleCallback.polyfill.js)
+  > [requestIdleCallback](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/requestIdleCallback)目前只支持chrome，需要[polyfill](https://github.com/careteenL/react/blob/master/packages/fiber/utils/requestIdleCallback.polyfill.js)
 
 TODO 手绘requestIdleCallback执行过程
 
@@ -119,4 +119,192 @@ class UpdateQueue {
 
 #### 为什么需要Fiber
 
-#### Fiber如何工作
+在`React15`及之前，`React`会递归比对`VirtualDOM`树，找出需要变动的节点，然后同步更新它们。这个过程`React`称为`Reconcilation(协调)`。
+
+在`Reconcilation`期间，`React`会一直占用着浏览器资源，一则会导致用户触发的事件得不到响应, 二则会导致掉帧，用户可能会感觉到卡顿。如下模拟其遍历过程
+
+##### React15的DOMDIFF
+
+TODO 手绘节点结构图
+
+将上图节点结构映射成虚拟DOM
+```js
+const root = {
+  key: 'A1',
+  children: [
+    {
+      key:  'B1',
+      children: [
+        {
+          key: 'C1',
+          children: []
+        },
+        {
+          key: 'C2',
+          children: []
+        }
+      ]
+    },
+    {
+      key:  'B2',
+      children: []
+    }
+  ]
+}
+```
+采用深度优先算法对其遍历
+> [详解DFS](https://github.com/careteenL/data-structure_algorithm/blob/0816-leetcode/src/algorithm/recursion/dfs-bfs.md#dfs)
+```js
+function walk(vdom, cb) {
+  cb && cb(vdom)
+  vdom.children.forEach(child => walk(child, cb))
+}
+// Test
+walk(root, (node) => {
+  console.log(node.key)
+})
+```
+在`Dom-Diff`时也是如此递归遍历对比，且存在两个非常影响性能的问题。
+- 树节点庞大时，会导致递归调用执行栈越来越深
+- 不能中断执行，页面会等待递归执行完成才重新渲染
+> [详解React的Dom-Diff](https://github.com/careteenL/react/tree/master/examples/dom-diff)
+
+#### Fiber是什么
+
+- Fiber是一个执行单元
+- Fiber也是一种数据结构
+
+##### Fiber是一个执行单元
+
+上面`浏览器任务调度过程`提到在页面合成后还存在一个空闲阶段`requestIdleCallback`。
+
+TODO 手绘React结合空闲阶段的调度过程
+
+Fiber是一个执行单元，每次执行完一个执行单元，React就会检查现在还剩多少时间，如果没有时间就将控制权交还浏览器；然后继续进行下一帧的渲染。
+
+##### Fiber也是一种数据结构
+
+TODO 手绘Fiber数据结构
+
+React中使用链表将`Virtual DOM`链接起来，每一个节点表示一个Fiber
+
+```js
+class FiberNode {
+  constructor(type, payload) {
+    this.type = type // 节点类型
+    this.key = payload.key // key
+    this.payload = payload // 挂载的数据
+    this.return = null // 父Fiber
+    this.child = null // 长子Fiber
+    this.sibling = null // 相邻兄弟Fiber
+  }
+}
+
+// Test
+const A1 = new FiberNode('div', { key: 'A1' })
+const B1 = new FiberNode('div', { key: 'B1' })
+const B2 = new FiberNode('div', { key: 'B2' })
+const C1 = new FiberNode('div', { key: 'C1' })
+const C2 = new FiberNode('div', { key: 'C2' })
+
+A1.child = B1
+B1.return = A1
+B1.sibling = B2
+B1.child = C1
+B2.return = A1
+C1.return = B1
+C1.sibling = C2
+C2.return =  B1
+```
+
+##### 小结
+- 我们可以通过某些调度策略合理分配CPU资源，从而提高用户的响应速度
+- 通过Fiber架构，让自己的Reconcilation过程变得可被中断，适时地让出CPU执行权，可以让楼兰器及时地响应用户的交互
+
+#### Fiber执行阶段
+
+每次渲染有两个阶段：`Reconciliation`（协调/render）阶段和`Commit`（提交）阶段
+
+- 协调/render阶段：可以认为是Diff阶段，这个阶段可以被中断，这个阶段会找出所有节点变更，例如节点增删改等等，这些变更在React中称为Effect（副作用）。
+- 提交阶段：将上一个阶段计算出来的需要处理的副作用一次性执行。这个阶段不能中断，必须同步一次性执行完。
+
+
+#### Reconciliation阶段
+
+下面将上面讲到的几个知识点串联起来使用。
+> 此小结测试例子[fiberRender.html](https://github.com/careteenL/react/tree/master/packages/fiber/utils/fiberRender.html)，核心代码存放[fiberRender.js](https://github.com/careteenL/react/tree/master/packages/fiber/utils/fiberRender.js)。
+
+上面`Fiber也是一种数据结构`小结已经构建了Fiber树，然后来开始遍历，在第一次渲染中，所有操作类型都是新增。
+> 根据`Virtual DOM`去构建`Fiber Tree`
+
+```js
+nextUnitOfWork = A1
+requestIdleCallback(workLoop, { timeout: 1000 })
+```
+空闲时间去遍历收集`A1`根节点
+```js
+function workLoop (deadline) {
+  // 这一帧渲染还有空闲时间 || 没超时 && 还存在一个执行单元
+  while ((deadline.timeRemaining() > 0 || deadline.didTimeout) && nextUnitOfWork) {
+    nextUnitOfWork = performUnitOfWork(nextUnitOfWork) // 执行当前执行单元 并返回下一个执行单元
+  }
+  if (!nextUnitOfWork) {
+    console.log('render end !')
+  } else {
+    requestIdleCallback(workLoop, { timeout: 1000 })
+  }
+}
+```
+- 当满足`这一帧渲染还有空闲时间或没超时 && 还存在一个执行单元`时去执行当前执行单元 并返回下一个执行单元。
+- 不满足上面条件后若还存在一个执行单元，会继续下一帧的渲染。
+  - 不存在执行单元时，次阶段完成。
+
+```js
+function performUnitOfWork (fiber) {
+  beginWork(fiber) // 开始
+  if (fiber.child) {
+    return fiber.child
+  }
+  while (fiber) {
+    completeUnitOfWork(fiber) // 结束
+    if (fiber.sibling) {
+      return fiber.sibling
+    }
+    fiber = fiber.return
+  }
+}
+function beginWork (fiber) {
+  console.log('start: ', fiber.key)
+}
+function completeUnitOfWork (fiber) {
+  console.log('end: ', fiber.key)
+}
+
+```
+TODO 手绘遍历流程
+遍历执行单元流程如下
+1. 从根节点开始遍历
+1. 如果没有长子，则标识当前节点遍历完成。`completeUnitOfWork`中收集
+1. 如果没有相邻兄弟，则返回父节点标识父节点遍历完成。`completeUnitOfWork`中收集
+1. 如果没有父节点，标识所有遍历完成。`over`
+1. 如果有长子，则遍历；`beginWork`中收集；收集完后返回其长子，回到`第2步`循环遍历
+1. 如果有相邻兄弟，则遍历；`beginWork`中收集；收集完后返回其长子，回到`第2步`循环遍历
+
+执行的收集顺序如下
+> 类似[二叉树的先序遍历](https://github.com/careteenL/data-structure_algorithm/blob/0816-leetcode/src/data-structure/binary-search-tree.js#L129)
+```js
+function beginWork (fiber) {
+  console.log('start: ', fiber.key) // A1 B1 C1 C2 B2
+}
+```
+完成的收集顺序如下
+> 类似[二叉树的后序遍历](https://github.com/careteenL/data-structure_algorithm/blob/0816-leetcode/src/data-structure/binary-search-tree.js#L163)
+```js
+function completeUnitOfWork (fiber) {
+  console.log('end: ', fiber.key) // C1 C2 B1 B2 A1
+}
+```
+
+#### Commit阶段
+
+TODO
