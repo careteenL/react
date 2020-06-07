@@ -119,9 +119,9 @@ class UpdateQueue {
 
 #### 为什么需要Fiber
 
-在`React15`及之前，`React`会递归比对`VirtualDOM`树，找出需要变动的节点，然后同步更新它们。这个过程`React`称为`Reconcilation(协调)`。
+在`React15`及之前，`React`会递归比对`VirtualDOM`树，找出需要变动的节点，然后同步更新它们。这个过程`React`称为`Reconciliation(协调)`。
 
-在`Reconcilation`期间，`React`会一直占用着浏览器资源，一则会导致用户触发的事件得不到响应, 二则会导致掉帧，用户可能会感觉到卡顿。如下模拟其遍历过程
+在`Reconciliation`期间，`React`会一直占用着浏览器资源，一则会导致用户触发的事件得不到响应, 二则会导致掉帧，用户可能会感觉到卡顿。如下模拟其遍历过程
 
 ##### React15的DOMDIFF
 
@@ -219,7 +219,7 @@ C2.return =  B1
 
 ##### 小结
 - 我们可以通过某些调度策略合理分配CPU资源，从而提高用户的响应速度
-- 通过Fiber架构，让自己的Reconcilation过程变得可被中断，适时地让出CPU执行权，可以让楼兰器及时地响应用户的交互
+- 通过Fiber架构，让自己的Reconciliation过程变得可被中断，适时地让出CPU执行权，可以让楼兰器及时地响应用户的交互
 
 #### Fiber执行阶段
 
