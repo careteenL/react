@@ -15,8 +15,8 @@ npm i --save-dev react-app-rewired customize-cra
 修改`package.json`
 ```diff
 "scripts": {
-    - "start": "react-scripts start"
-    + "start": "react-app-rewired start",
+-  "start": "react-scripts start"
++   "start": "react-app-rewired start",
 },
 ```
 根目录下新建`config-overrides.js`
