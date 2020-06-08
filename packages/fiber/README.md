@@ -232,7 +232,7 @@ C2.return =  B1
 #### Reconciliation阶段
 
 下面将上面讲到的几个知识点串联起来使用。
-> 此小结测试例子[fiberRender.html](https://github.com/careteenL/react/tree/master/packages/fiber/utils/fiberRender.html)，核心代码存放[fiberRender.js](https://github.com/careteenL/react/tree/master/packages/fiber/utils/fiberRender.js)。
+> 此阶段测试例子[fiberRender.html](https://github.com/careteenL/react/tree/master/packages/fiber/utils/fiberRender.html)，核心代码存放[fiberRender.js](https://github.com/careteenL/react/tree/master/packages/fiber/utils/fiberRender.js)。
 
 上面`Fiber也是一种数据结构`小结已经构建了Fiber树，然后来开始遍历，在第一次渲染中，所有操作类型都是新增。
 > 根据`Virtual DOM`去构建`Fiber Tree`
@@ -307,4 +307,115 @@ function completeUnitOfWork (fiber) {
 
 #### Commit阶段
 
-TODO
+类似于`Git`的分支功能，从旧树里面fork一份，在新分支中进行**添加、删除、更新**操作，然后再进行提交。
+
+TODO git commit流程图
+
+
+> 此阶段测试例子[fiberCommit.html](https://github.com/careteenL/react/tree/master/packages/fiber/utils/fiberCommit.html)，核心代码存放[fiberCommit.js](https://github.com/careteenL/react/tree/master/packages/fiber/utils/fiberCommit.js)。
+
+先构造根fiber，`stateNode`表示当前节点真实dom。
+```js
+let container = document.getElementById('root')
+workInProgressRoot = {
+  key: 'ROOT',
+  stateNode: container,
+  props: { children: [A1] }
+}
+nextUnitOfWork = workInProgressRoot // 从RootFiber开始，到RootFiber结束
+```
+
+如上一个阶段的`beginWork`收集过程，对其进行完善。即将所有节点fiber化。
+```js
+function beginWork(currentFiber) { // ++
+  if (!currentFiber.stateNode) {
+    currentFiber.stateNode = document.createElement(currentFiber.type) // 创建真实DOM
+    for (let key in currentFiber.props) { // 循环属性赋赋值给真实DOM
+      if (key !== 'children' && key !== 'key')
+        currentFiber.stateNode.setAttribute(key, currentFiber.props[key])
+    }
+  }
+  let previousFiber
+  currentFiber.props.children.forEach((child, index) => {
+    let childFiber = {
+      tag: 'HOST',
+      type: child.type,
+      key: child.key,
+      props: child.props,
+      return: currentFiber,
+      effectTag: 'PLACEMENT',
+      nextEffect: null
+    }
+    if (index === 0) {
+      currentFiber.child = childFiber
+    } else {
+      previousFiber.sibling = childFiber
+    }
+    previousFiber = childFiber
+  })
+}
+```
+其中`effectTag`标识当前节点的副作用类型，第一次渲染为新增`PLACEMENT`，`nextEffect`标识下一个有副作用的节点。
+
+然后再完善`completeUnitOfWork`（完成的收集）。
+```js
+function completeUnitOfWork(currentFiber) { // ++
+  const returnFiber = currentFiber.return
+  if (returnFiber) {
+    if (!returnFiber.firstEffect) {
+      returnFiber.firstEffect = currentFiber.firstEffect
+    }
+    if (currentFiber.lastEffect) {
+      if (returnFiber.lastEffect) {
+        returnFiber.lastEffect.nextEffect = currentFiber.firstEffect
+      }
+      returnFiber.lastEffect = currentFiber.lastEffect
+    }
+
+    if (currentFiber.effectTag) {
+      if (returnFiber.lastEffect) {
+        returnFiber.lastEffect.nextEffect = currentFiber
+      } else {
+        returnFiber.firstEffect = currentFiber
+      }
+      returnFiber.lastEffect = currentFiber
+    }
+  }
+}
+```
+目的是将完成的收集形成一个链表结构，配合`commitRoot`阶段。
+
+当将所有的`执行、完成`收集完成后（即将所有真实DOM、虚拟DOM、Fiber结合，其副作用（增删改）形成一个链表结构），需要对其渲染到页面中。
+```js
+function workLoop (deadline) {
+  // ...
+  if (!nextUnitOfWork) {
+    console.log('render end !')
+    commitRoot()
+  } else {
+    requestIdleCallback(workLoop, { timeout: 1000 })
+  }
+}
+```
+
+找到第一个副作用完成的fiber节点，递归`appendChild`到父元素上。
+```js
+function commitRoot() { // ++
+  let fiber = workInProgressRoot.firstEffect
+  while (fiber) {
+    console.log('complete: ', fiber.key) // C1 C2 B1 B2 A1
+    commitWork(fiber)
+    fiber = fiber.nextEffect
+  }
+  workInProgressRoot = null
+}
+function commitWork(currentFiber) {
+  currentFiber.return.stateNode.appendChild(currentFiber.stateNode)
+}
+```
+如下为上述的渲染效果
+TODO commit阶段后的渲染结果
+
+### React使用Fiber
+
+TODO 虚拟DOM、初次渲染、更新
