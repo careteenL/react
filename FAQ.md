@@ -13,11 +13,10 @@ which falls outside of the project src/ directory. Relative imports outside of s
 npm i --save-dev react-app-rewired customize-cra
 ```
 修改`package.json`
-```json
+```diff
 "scripts": {
     - "start": "react-scripts start"
     + "start": "react-app-rewired start",
-    ...
 },
 ```
 根目录下新建`config-overrides.js`
