@@ -52,6 +52,9 @@ npm i -S @careteen/react
 // TODO
 ```
 
+## FAQ
+
+- [FAQ](./FAQ.md)
 
 ## issue模板
 
