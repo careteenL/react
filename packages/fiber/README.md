@@ -415,6 +415,7 @@ function commitWork(currentFiber) {
 ```
 如下为上述的渲染效果
 TODO commit阶段后的渲染结果
+![fiber-commit-result](./assets/fiber-commit-result.jpg)
 
 ### React使用Fiber
 
