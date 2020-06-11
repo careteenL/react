@@ -1,4 +1,4 @@
-import React from '../../../packages/react/index';
+import React from '../../../packages/react/';
 import ReactDOM from '../../../packages/react-dom';
 
 class Counter extends React.Component {
