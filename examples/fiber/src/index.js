@@ -1,25 +1,32 @@
-import React from '../../../packages/react/';
-import ReactDOM from '../../../packages/react-dom';
+import React from 'react'
+import ReactDOM from 'react-dom'
+// import React from '../../../packages/fiber/core/react';
+// import ReactDOM from '../../../packages/fiber/core/react-dom';
 
-class Counter extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { number: 0 };
-
-  }
-  handleClick = () => {
-    this.setState((state) => ({ number: state.number + 1 }));
-  }
-  render() {
-    return (
-      <div id={'count' + this.state.number}>
-        <p>{this.state.number}</p>
-        <button onClick={this.handleClick}>+</button>
-      </div>
-    )
+function reducer(state, action) {
+  switch (action.type) {
+    case 'ADD':
+      return { count: state.count + 1 };
+    default:
+      return state;
   }
 }
+function FunctionCounter() {
+  const [numberState, setNumberState] = React.useState({ number: 0 });
+  const [countState, dispatch] = React.useReducer(reducer, { count: 0 });
+  return (
+    <div>
+      <h1 onClick={() => setNumberState(state => ({ number: state.number + 1 }))}>
+        Count: {numberState.number}
+      </h1 >
+      <hr />
+      <h1 onClick={() => dispatch({ type: 'ADD' })}>
+        Count: {countState.count}
+      </h1 >
+    </div>
+  )
+}
 ReactDOM.render(
-  <Counter />,
+  <FunctionCounter />,
   document.getElementById('root')
 );
