@@ -1,12 +1,14 @@
-# 由浅入深React中的Fiber架构
+# 由浅入深React的Fiber架构
 
 目的是初识fiber并实现react基础功能，请带着下面几个问题去阅读此文。
-- 如何实现React16下的虚拟DOM
-- 如何实现Fiber的数据结构和遍历算法
-- 如何实现Fiber架构下可中断和恢复的的任务调度
-- 如何实现Fiber架构下的组件渲染和副作用收集提交
-- 如何实现Fiber中的调和和双缓冲优化策略
-- 如何实现useReducer和useState等Hooks
+- React15存在哪些痛点？Fiber是什么？React16为什么需要引入Fiber？
+- 如何实现React16下的虚拟DOM？
+- 如何实现Fiber的数据结构和遍历算法？
+- 如何实现Fiber架构下可中断和可恢复的的任务调度？
+  - 如何指定数量更新？如何批量更新？
+- 如何实现Fiber架构下的组件渲染和副作用收集提交？
+- 如何实现Fiber中的调和和双缓冲优化策略？
+- 如何实现useReducer和useState等Hooks？
 - 如何实现expirationTime 任务的优先级 任务调度 超时时间的处理
 - 如何实现reconcile domdiff的优化key处理
 - 如何实现合成事件 SyntheticEvent
@@ -14,6 +16,7 @@
 
 ## 目录
 
+- [React15的调度策略](#React15的调度策略)
 - [浏览器任务调度策略和渲染流程](#浏览器任务调度策略和渲染流程)
 - [链表](#链表)
   - [模拟setState](#模拟setState)
@@ -38,13 +41,27 @@
   - [实现函数式组件](#实现函数式组件)
   - [实现Hooks](#实现Hooks)
 
+
+## React15的调度策略
+
+> JavaScript就像一条单行道。
+
+JavaScript是单线程运行的。在浏览器环境中，他需要负责页面的JavaScript解析和执行、绘制、事件处理、静态资源加载和处理。而且只能一个任务一个任务的执行，如果其中某个任务耗时很长，那后面的任务则执行不了，在浏览器端则会呈现卡死的状态。
+
+![browser-render](./assets/browser-render.png)
+
+React15的渲染和diff会递归比对`VirtualDOM树`，**找出有增删改的节点，然后同步更新他们**，整个过程是一气呵成的。那么如果页面节点数量非常庞大，`React`会一直霸占着浏览器资源，一则会导致用户触发的事件得不到响应，二则会导致掉帧，用户会感知到这些卡顿。
+
+所以针对上述痛点，我们期望将**找出有增删改的节点，然后同步更新他们**这个过程分解成两个独立的部分，或者通过某种方式能让整个过程**可中断可恢复的执行**，类似于多任务操作系统的单处理器调度。
+> 为了实现进程的并发，操作系统会按照一定的调度策略，将CPU的执行权分配给多个进程，多个进程都有被执行的机会，让他们交替执行，形成一种同时在运行的假象。因为CPU速度太快，人类根本感觉不到。实际上在单核的物理环境下同时只有一个程序在运行。
+
 ## 浏览器任务调度策略和渲染流程
 
-TODO 吃鸡的卡顿gif
+![pubg-stuck](./assets/pubg-stuck.gif)
 
-玩吃鸡时需要流畅的刷新率，也就是至少60赫兹。不然大概率你就是送快递的。
+玩游戏时需要流畅的刷新率，也就是至少60赫兹。不然游戏体验极差。
 
-TODO 手绘一个帧
+![a-frame](./assets/a-frame.jpg)
 
 一帧平均是16.66ms，主要分为以下几个部分
 - 脚本执行
@@ -59,11 +76,13 @@ TODO 手绘一个帧
 在合成后还存在一个`空闲阶段`，即合成及之前的所有步骤耗时若不足`16.66ms`，剩下的时间浏览器为我们提供了`requestIdleCallback`进行调用，对其充分利用。
   > [requestIdleCallback](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/requestIdleCallback)目前只支持chrome，需要[polyfill](https://github.com/careteenL/react/blob/master/packages/fiber/utils/requestIdleCallback.polyfill.js)
 
-TODO 手绘requestIdleCallback执行过程
+![requestIdleCallback-api](./assets/requestIdleCallback-api.jpg)
 
-TODO 执行过程
+大致流程如下：
+![requestIdleCallback-flow](./assets/requestIdleCallback-flow.jpg)
+> [requestIdleCallback示例](https://wiki.developer.mozilla.org/zh-CN/docs/Web/API/Background_Tasks_API)
 
-TODO 简易示例
+**requestIdleCallback使开发者能够在主事件循环上执行后台和低优先级工作，而不会影响延迟关键事件，如动画和输入响应。**
 
 ## 链表
 
