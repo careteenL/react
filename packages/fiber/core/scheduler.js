@@ -94,7 +94,7 @@ function beginWork(currentFiber) {
     updateHost(currentFiber);
   } else if (currentFiber.tag === TAG_CLASS) {//类组件
     updateClassComponent(currentFiber);
-  } else if (currentFiber.tag === TAG_FUNCTION_COMPONENT) {//类组件
+  } else if (currentFiber.tag === TAG_FUNCTION_COMPONENT) {//函数式组件
     updateFunctionComponent(currentFiber);
   }
 }

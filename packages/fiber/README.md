@@ -40,7 +40,7 @@
   - [实现类组件](#实现类组件)
   - [实现函数式组件](#实现函数式组件)
   - [实现Hooks](#实现Hooks)
-
+- [参考资料](#参考资料)
 
 ## React15的调度策略
 
@@ -458,13 +458,10 @@ function commitWork(currentFiber) {
   currentFiber.return.stateNode.appendChild(currentFiber.stateNode)
 }
 ```
-如下为上述的渲染效果
-TODO commit阶段后的渲染结果
+如下为上述的渲染效果和打印完成的收集顺序
 ![fiber-commit-result](./assets/fiber-commit-result.jpg)
 
 ## React使用Fiber
-
-TODO 虚拟DOM、初次渲染、更新
 
 ### 准备环境
 
@@ -578,25 +575,63 @@ export default {
 代码量较多，主要为`Reconciliation阶段`和`Commit阶段`的组合代码。
 > [此过程代码存放地址](./backup/scheduler.js)
 
+其中对`beginWork`进行细化
+```js
+function beginWork(currentFiber) {
+  if (currentFiber.tag === TAG_ROOT) { // 如果是根节点
+    updateHostRoot(currentFiber);
+  } else if (currentFiber.tag === TAG_TEXT) { // 如果是原生文本节点
+    updateHostText(currentFiber);
+  } else if (currentFiber.tag === TAG_HOST) { // 如果是原生DOM节点
+    updateHostComponent(currentFiber);
+  }
+}
+function updateHostRoot(currentFiber) { // 如果是根节点
+  const newChildren = currentFiber.props.children; // 直接渲染子节点
+  reconcileChildren(currentFiber, newChildren);
+}
+function updateHostText(currentFiber) {
+  if (!currentFiber.stateNode) {
+    currentFiber.stateNode = createDOM(currentFiber); // 先创建真实的DOM节点
+  }
+}
+function updateHostComponent(currentFiber) { // 如果是原生DOM节点
+  if (!currentFiber.stateNode) {
+    currentFiber.stateNode = createDOM(currentFiber); // 先创建真实的DOM节点
+  }
+  const newChildren = currentFiber.props.children;
+  reconcileChildren(currentFiber, newChildren);
+}
+```
+其中主要是针对不同类型节点赋值给`stateNode`
+
+- 原生DOM节点/原生文本节点：直接创建真是DOM节点赋值给`stateNode`
+- 下面将会对其进行扩展
+  - 类组件：需要new一个组件实例挂载到`stateNode`
+  - 函数式组件：没有实例，`stateNode`为null
+
+`reconcileChildren`也是对不同类型节点做处理。
+
 ### 渲染小结
 再次巩固下上一节的两个阶段及调度规则
 - 从根节点开始渲染和调度主要有两个阶段
-  - render阶段：此阶段比较花时间，我们可以对任务进行拆分，拆分的维度虚拟DOM。此阶段借助`requestIdleCallback`可以实现暂停
-  - diff阶段：对比新旧的虚拟DOM，进行增量、更新、创建
-- render阶段成果是`effect list`，收集节点的增删改
-- render阶段有两个任务
-  - 根据虚拟DOM生成fiber树
-  - 收集`effectlist`
-- commit阶段，进行DOM更新创建阶段，此阶段不能暂停，要一气呵成
+  - **render阶段：此阶段比较花时间，我们可以对任务进行拆分，拆分的维度虚拟DOM。此阶段借助`requestIdleCallback`可以实现暂停**
+  - **diff阶段：对比新旧的虚拟DOM，进行增量、更新、创建**
+- **render阶段成果是`effect list`，收集节点的增删改**
+- **render阶段有两个任务**
+  - **根据虚拟DOM生成fiber树**
+  - **收集`effectlist`**
+- **commit阶段，进行DOM更新创建阶段，此阶段不能暂停，要一气呵成**
 
 调度规则
-- 遍历链规则：先长子、后兄弟、再二叔
-- 完成链规则：所有儿子全部完成，则自己完成
-- effect链：同完成链
+- **遍历链规则：先长子、后兄弟、再二叔**
+- **完成链规则：所有儿子全部完成，则自己完成**
+- **effect链：同完成链**
 
 ### 实现元素的更新
 
 **其中使用到双缓冲优化策略，下面将重点介绍**
+> 类似于图形化领域绘制引擎常用的**双缓冲技术**。先将图片绘制到一个缓冲区，再一次性传递给屏幕进行显示，这样可以防止屏幕抖动，优化渲染性能。
 
 操作页面进而重新渲染，期望第一次更新为`变更A1/B1/C1/C2、新增B3`，第二次更新为`变更A1/B1/C1/C2、删除B3`。
 ![react-target-reRender](./assets/react-target-reRender.gif)
@@ -677,117 +712,117 @@ let nextUnitOfWork = null//下一个工作单元
 +let deletions = [];//要删除的fiber节点
 
 export function scheduleRoot(rootFiber) {
-    //{tag:TAG_ROOT,stateNode:container,props: { children: [element] }}
-+    if (currentRoot && currentRoot.alternate) {//偶数次更新
-+        workInProgressRoot = currentRoot.alternate;
-+        workInProgressRoot.firstEffect = workInProgressRoot.lastEffect = workInProgressRoot.nextEffect = null;
-+        workInProgressRoot.props = rootFiber.props;
-+        workInProgressRoot.alternate = currentRoot;
-+    } else if (currentRoot) {//奇数次更新
-+        rootFiber.alternate = currentRoot;
-+        workInProgressRoot = rootFiber;
-+    } else {
-+        workInProgressRoot = rootFiber;//第一次渲染
-+    }
+  // {tag:TAG_ROOT,stateNode:container,props: { children: [element] }}
++  if (currentRoot && currentRoot.alternate) {//偶数次更新
++    workInProgressRoot = currentRoot.alternate;
++    workInProgressRoot.firstEffect = workInProgressRoot.lastEffect = workInProgressRoot.nextEffect = null;
++    workInProgressRoot.props = rootFiber.props;
++    workInProgressRoot.alternate = currentRoot;
++  } else if (currentRoot) {//奇数次更新
++    rootFiber.alternate = currentRoot;
++    workInProgressRoot = rootFiber;
++  } else {
++    workInProgressRoot = rootFiber;//第一次渲染
++  }
     nextUnitOfWork = workInProgressRoot;
 }
 
 function commitRoot() {
-+    deletions.forEach(commitWork);
-    let currentFiber = workInProgressRoot.firstEffect;
-    while (currentFiber) {
-        commitWork(currentFiber);
-        currentFiber = currentFiber.nextEffect;
-    }
-+    deletions.length = 0;//先把要删除的节点清空掉
-+    currentRoot = workInProgressRoot;
-    workInProgressRoot = null;
++  deletions.forEach(commitWork);
+  let currentFiber = workInProgressRoot.firstEffect;
+  while (currentFiber) {
+    commitWork(currentFiber);
+    currentFiber = currentFiber.nextEffect;
+  }
++  deletions.length = 0;//先把要删除的节点清空掉
++  currentRoot = workInProgressRoot;
+  workInProgressRoot = null;
 }
 function commitWork(currentFiber) {
-    if (!currentFiber) {
-        return;
-    }
-    let returnFiber = currentFiber.return;//先获取父Fiber
-    const domReturn = returnFiber.stateNode;//获取父的DOM节点
-    if (currentFiber.effectTag === PLACEMENT && currentFiber.stateNode != null) {//如果是新增DOM节点
-        let nextFiber = currentFiber;
-        domReturn.appendChild(nextFiber.stateNode);
-+    } else if (currentFiber.effectTag === DELETION) {//如果是删除则删除并返回
-+        domReturn.removeChild(currentFiber.stateNode);
-+    } else if (currentFiber.effectTag === UPDATE && currentFiber.stateNode != null) {//如果是更新
-+        if (currentFiber.type === ELEMENT_TEXT) {
-+            if (currentFiber.alternate.props.text != currentFiber.props.text) {
-+                currentFiber.stateNode.textContent = currentFiber.props.text;
-+            }
-+        } else {
-+            updateDOM(currentFiber.stateNode, currentFiber.alternate.props, currentFiber.props);
-+        }
+  if (!currentFiber) {
+    return;
+  }
+  let returnFiber = currentFiber.return;//先获取父Fiber
+  const domReturn = returnFiber.stateNode;//获取父的DOM节点
+  if (currentFiber.effectTag === PLACEMENT && currentFiber.stateNode != null) {//如果是新增DOM节点
+    let nextFiber = currentFiber;
+    domReturn.appendChild(nextFiber.stateNode);
++  } else if (currentFiber.effectTag === DELETION) {//如果是删除则删除并返回
++      domReturn.removeChild(currentFiber.stateNode);
++  } else if (currentFiber.effectTag === UPDATE && currentFiber.stateNode != null) {//如果是更新
++    if (currentFiber.type === ELEMENT_TEXT) {
++      if (currentFiber.alternate.props.text != currentFiber.props.text) {
++        currentFiber.stateNode.textContent = currentFiber.props.text;
++      }
++    } else {
++      updateDOM(currentFiber.stateNode, currentFiber.alternate.props, currentFiber.props);
 +    }
-    currentFiber.effectTag = null;
++  }
+  currentFiber.effectTag = null;
 }
 
 function reconcileChildren(currentFiber, newChildren) {
   let newChildIndex = 0;//新虚拟DOM数组中的索引
-+    let oldFiber = currentFiber.alternate && currentFiber.alternate.child;//父Fiber中的第一个子Fiber
-+    let prevSibling;
-+    while (newChildIndex < newChildren.length || oldFiber) {
-+        const newChild = newChildren[newChildIndex];
-+        let newFiber;
-+        const sameType = oldFiber && newChild && newChild.type === oldFiber.type;//新旧都有，并且元素类型一样
-+        let tag;
-+        if (newChild && newChild.type === ELEMENT_TEXT) {
-+            tag = TAG_TEXT;//文本
-+        } else if (newChild && typeof newChild.type === 'string') {
-+            tag = TAG_HOST;//原生DOM组件
++  let oldFiber = currentFiber.alternate && currentFiber.alternate.child;//父Fiber中的第一个子Fiber
++  let prevSibling;
++  while (newChildIndex < newChildren.length || oldFiber) {
++    const newChild = newChildren[newChildIndex];
++    let newFiber;
++    const sameType = oldFiber && newChild && newChild.type === oldFiber.type;//新旧都有，并且元素类型一样
++    let tag;
++    if (newChild && newChild.type === ELEMENT_TEXT) {
++      tag = TAG_TEXT;//文本
++    } else if (newChild && typeof newChild.type === 'string') {
++      tag = TAG_HOST;//原生DOM组件
++    }
++    if (sameType) {
++      if (oldFiber.alternate) {
++        newFiber = oldFiber.alternate;
++        newFiber.props = newChild.props;
++        newFiber.alternate = oldFiber;
++        newFiber.effectTag = UPDATE;
++        newFiber.nextEffect = null;
++      } else {
++        newFiber = {
++          tag:oldFiber.tag,//标记Fiber类型，例如是函数组件或者原生组件
++          type: oldFiber.type,//具体的元素类型
++          props: newChild.props,//新的属性对象
++          stateNode: oldFiber.stateNode,//原生组件的话就存放DOM节点，类组件的话是类组件实例，函数组件的话为空，因为没有实例
++          return: currentFiber,//父Fiber
++          alternate: oldFiber,//上一个Fiber 指向旧树中的节点
++          effectTag: UPDATE,//副作用标识
++          nextEffect: null //React 同样使用链表来将所有有副作用的Fiber连接起来
 +        }
-+        if (sameType) {
-+            if (oldFiber.alternate) {
-+                newFiber = oldFiber.alternate;
-+                newFiber.props = newChild.props;
-+                newFiber.alternate = oldFiber;
-+                newFiber.effectTag = UPDATE;
-+                newFiber.nextEffect = null;
-+            } else {
-+                newFiber = {
-+                    tag:oldFiber.tag,//标记Fiber类型，例如是函数组件或者原生组件
-+                    type: oldFiber.type,//具体的元素类型
-+                    props: newChild.props,//新的属性对象
-+                    stateNode: oldFiber.stateNode,//原生组件的话就存放DOM节点，类组件的话是类组件实例，函数组件的话为空，因为没有实例
-+                    return: currentFiber,//父Fiber
-+                    alternate: oldFiber,//上一个Fiber 指向旧树中的节点
-+                    effectTag: UPDATE,//副作用标识
-+                    nextEffect: null //React 同样使用链表来将所有有副作用的Fiber连接起来
-+                }
-+            }
-+        } else {
-+            if (newChild) {//类型不一样，创建新的Fiber,旧的不复用了
-+                newFiber = {
-+                    tag,//原生DOM组件
-+                    type: newChild.type,//具体的元素类型
-+                    props: newChild.props,//新的属性对象
-+                    stateNode: null,//stateNode肯定是空的
-+                    return: currentFiber,//父Fiber
-+                    effectTag: PLACEMENT//副作用标识
-+                }
-+            }
-+            if (oldFiber) {
-+                oldFiber.effectTag = DELETION;
-+                deletions.push(oldFiber);
-+            }
+# +      }
++      } else {
++        if (newChild) {//类型不一样，创建新的Fiber,旧的不复用了
++          newFiber = {
++            tag,//原生DOM组件
++            type: newChild.type,//具体的元素类型
++            props: newChild.props,//新的属性对象
++            stateNode: null,//stateNode肯定是空的
++            return: currentFiber,//父Fiber
++            effectTag: PLACEMENT//副作用标识
++          }
 +        }
-+        if (oldFiber) {  //比较完一个元素了，老Fiber向后移动1位
-+            oldFiber = oldFiber.sibling;
++        if (oldFiber) {
++          oldFiber.effectTag = DELETION;
++          deletions.push(oldFiber);
 +        }
-     if (newFiber) {
-          if (newChildIndex === 0) {
-              currentFiber.child = newFiber;//第一个子节点挂到父节点的child属性上
-          } else {
-              prevSibling.sibling = newFiber;
-          }
-          prevSibling = newFiber;//然后newFiber变成了上一个哥哥了
++      }
++      if (oldFiber) {  //比较完一个元素了，老Fiber向后移动1位
++        oldFiber = oldFiber.sibling;
++      }
+    if (newFiber) {
+      if (newChildIndex === 0) {
+        currentFiber.child = newFiber;//第一个子节点挂到父节点的child属性上
+      } else {
+        prevSibling.sibling = newFiber;
       }
       prevSibling = newFiber;//然后newFiber变成了上一个哥哥了
-      newChildIndex++;
+    }
+    prevSibling = newFiber;//然后newFiber变成了上一个哥哥了
+    newChildIndex++;
   }
 }
 ```
@@ -796,7 +831,7 @@ function reconcileChildren(currentFiber, newChildren) {
 ### 实现类组件
 
 ![fiber-classCom-process-1](./assets/fiber-classCom-process-1.jpg)
-构建一个定时器
+构建一个计数器
 ```js
 class ClassCounter extends React.Component {
   constructor(props) {
@@ -827,23 +862,23 @@ import { ELEMENT_TEXT } from './constants';
 +import { scheduleRoot } from './scheduler';
 // ...
 +class Component {
-+    constructor(props) {
-+        this.props = props;
-+        this.updateQueue = new UpdateQueue();
-+    }
-+    setState(payload) {
-+        this.internalFiber.updateQueue.enqueueUpdate(new Update(payload));
-+        scheduleRoot();
-+    }
++  constructor(props) {
++    this.props = props;
++    this.updateQueue = new UpdateQueue();
++  }
++  setState(payload) {
++    this.internalFiber.updateQueue.enqueueUpdate(new Update(payload));
++    scheduleRoot();
++  }
 +}
 +Component.prototype.isReactComponent = true;
 let React = {
     createElement,
-+    Component
++  Component
 }
 export default React;
 ```
-此过程在[模拟setState](#模拟setState)过程已经模拟过
+此过程在[模拟setState](#模拟setState)过程已经说明
 ```js
 export class Update {
   constructor(payload) {
@@ -879,32 +914,32 @@ export class UpdateQueue {
 需要在`src/scheduler.js`文件中做如下修改
 ```diff
 function beginWork(currentFiber) {
-    if (currentFiber.tag === TAG_ROOT) {//如果是根节点
-        updateHostRoot(currentFiber);
-    } else if (currentFiber.tag === TAG_TEXT) {//如果是原生文本节点
-        updateHostText(currentFiber);
-    } else if (currentFiber.tag === TAG_HOST) {//如果是原生DOM节点
-        updateHostComponent(currentFiber);
-+    } else if (currentFiber.tag === TAG_CLASS) {//如果是类组件
-+        updateClassComponent(currentFiber)
-+    }
+  if (currentFiber.tag === TAG_ROOT) {//如果是根节点
+    updateHostRoot(currentFiber);
+  } else if (currentFiber.tag === TAG_TEXT) {//如果是原生文本节点
+    updateHostText(currentFiber);
+  } else if (currentFiber.tag === TAG_HOST) {//如果是原生DOM节点
+    updateHostComponent(currentFiber);
++  } else if (currentFiber.tag === TAG_CLASS) {//如果是类组件
++      updateClassComponent(currentFiber)
++  }
 }
 +function updateClassComponent(currentFiber) {
-+    if (currentFiber.stateNode === null) {
-+        currentFiber.stateNode = new currentFiber.type(currentFiber.props);
-+        currentFiber.stateNode.internalFiber = currentFiber;
-+        currentFiber.updateQueue = new UpdateQueue();
-+    }
-+    currentFiber.stateNode.state = currentFiber.updateQueue.forceUpdate(currentFiber.stateNode.state);
-+    const newChildren = [currentFiber.stateNode.render()];
-+    reconcileChildren(currentFiber, newChildren);
++  if (currentFiber.stateNode === null) {
++    currentFiber.stateNode = new currentFiber.type(currentFiber.props);
++    currentFiber.stateNode.internalFiber = currentFiber;
++    currentFiber.updateQueue = new UpdateQueue();
++  }
++  currentFiber.stateNode.state = currentFiber.updateQueue.forceUpdate(currentFiber.stateNode.state);
++  const newChildren = [currentFiber.stateNode.render()];
++  reconcileChildren(currentFiber, newChildren);
 +}
 ```
 如果是类组件，则new这个类将实例缓存到`currentFiber.stateNode`，再将`实例的render()方法执行结果`递归调度`reconcileChildren`
 
 ### 实现函数式组件
 
-同类组件一样，在对应地方新增一份`else..if`即可
+同类组件一样，在各对应地方新增一份`else..if`即可
 ```js
 function FunctionCounter() {
   return (
@@ -920,21 +955,21 @@ ReactDOM.render(
 ```
 ```diff
 function beginWork(currentFiber) {
-    if (currentFiber.tag === TAG_ROOT) {//如果是根节点
-        updateHostRoot(currentFiber);
-    } else if (currentFiber.tag === TAG_TEXT) {//如果是原生文本节点
-        updateHostText(currentFiber);
-    } else if (currentFiber.tag === TAG_HOST) {//如果是原生DOM节点
-        updateHostComponent(currentFiber);
-    } else if (currentFiber.tag === TAG_CLASS) {//如果是类组件
-        updateClassComponent(currentFiber)
-+    } else if (currentFiber.tag === TAG_FUNCTION) {//如果是函数组件
-+        updateFunctionComponent(currentFiber);
-+    }
+  if (currentFiber.tag === TAG_ROOT) {//如果是根节点
+    updateHostRoot(currentFiber);
+  } else if (currentFiber.tag === TAG_TEXT) {//如果是原生文本节点
+    updateHostText(currentFiber);
+  } else if (currentFiber.tag === TAG_HOST) {//如果是原生DOM节点
+    updateHostComponent(currentFiber);
+  } else if (currentFiber.tag === TAG_CLASS) {//如果是类组件
+    updateClassComponent(currentFiber)
++  } else if (currentFiber.tag === TAG_FUNCTION) {//如果是函数组件
++    updateFunctionComponent(currentFiber);
++  }
 }
 +function updateFunctionComponent(currentFiber) {
-+    const newChildren = [currentFiber.type(currentFiber.props)];
-+    reconcileChildren(currentFiber, newChildren);
++  const newChildren = [currentFiber.type(currentFiber.props)];
++  reconcileChildren(currentFiber, newChildren);
 +}
 ```
 与类组件不一样的是函数式组件没有实例，故直接将函数执行的返回值递归调度。
@@ -996,36 +1031,41 @@ let React = {
 +let workInProgressFiber = null; //正在工作中的fiber
 +let hookIndex = 0;              //hook索引
 function updateFunctionComponent(currentFiber) {
-+    workInProgressFiber = currentFiber;
-+    hookIndex = 0;
-+    workInProgressFiber.hooks = [];
++  workInProgressFiber = currentFiber;
++  hookIndex = 0;
++  workInProgressFiber.hooks = [];
     const newChildren = [currentFiber.type(currentFiber.props)];
     reconcileChildren(currentFiber, newChildren);
 }
 +export function useReducer(reducer, initialValue) {
-+    let oldHook =
-+        workInProgressFiber.alternate &&
-+        workInProgressFiber.alternate.hooks &&
-+        workInProgressFiber.alternate.hooks[hookIndex];
-+    let newHook = oldHook;
-+    if (oldHook) {
-+        oldHook.state = oldHook.updateQueue.forceUpdate(oldHook.state);
-+    } else {
-+        newHook = {
-+            state: initialValue,
-+            updateQueue: new UpdateQueue()
-+        };
-+    }
-+    const dispatch = action => {
-+        newHook.updateQueue.enqueueUpdate(
-+            new Update(reducer ? reducer(newHook.state, action) : action)
-+        );
-+        scheduleRoot();
-+    }
-+    workInProgressFiber.hooks[hookIndex++] = newHook;
-+    return [newHook.state, dispatch];
++  let oldHook =
++      workInProgressFiber.alternate &&
++      workInProgressFiber.alternate.hooks &&
++      workInProgressFiber.alternate.hooks[hookIndex];
++  let newHook = oldHook;
++  if (oldHook) {
++      oldHook.state = oldHook.updateQueue.forceUpdate(oldHook.state);
++  } else {
++      newHook = {
++          state: initialValue,
++          updateQueue: new UpdateQueue()
++      };
++  }
++  const dispatch = action => {
++      newHook.updateQueue.enqueueUpdate(
++          new Update(reducer ? reducer(newHook.state, action) : action)
++      );
++      scheduleRoot();
++  }
++  workInProgressFiber.hooks[hookIndex++] = newHook;
++  return [newHook.state, dispatch];
 +}
 +export function useState(initState) {
-+    return useReducer(null, initState)
++  return useReducer(null, initState)
 +}
 ```
+
+## 参考资料
+
+- [React Fiber架构 -司徒正美](https://zhuanlan.zhihu.com/p/37095662)
+- [这可能是最通俗的 React Fiber(时间分片) 打开方式](https://juejin.im/post/5dadc6045188255a270a0f85)
