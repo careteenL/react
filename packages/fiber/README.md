@@ -921,7 +921,7 @@ function beginWork(currentFiber) {
   } else if (currentFiber.tag === TAG_HOST) {//如果是原生DOM节点
     updateHostComponent(currentFiber);
 +  } else if (currentFiber.tag === TAG_CLASS) {//如果是类组件
-+      updateClassComponent(currentFiber)
++    updateClassComponent(currentFiber)
 +  }
 }
 +function updateClassComponent(currentFiber) {
@@ -1034,28 +1034,28 @@ function updateFunctionComponent(currentFiber) {
 +  workInProgressFiber = currentFiber;
 +  hookIndex = 0;
 +  workInProgressFiber.hooks = [];
-    const newChildren = [currentFiber.type(currentFiber.props)];
-    reconcileChildren(currentFiber, newChildren);
+  const newChildren = [currentFiber.type(currentFiber.props)];
+  reconcileChildren(currentFiber, newChildren);
 }
 +export function useReducer(reducer, initialValue) {
 +  let oldHook =
-+      workInProgressFiber.alternate &&
-+      workInProgressFiber.alternate.hooks &&
-+      workInProgressFiber.alternate.hooks[hookIndex];
-+  let newHook = oldHook;
++    workInProgressFiber.alternate &&
++    workInProgressFiber.alternate.hooks &&
++    workInProgressFiber.alternate.hooks[hookIndex];
++let newHook = oldHook;
 +  if (oldHook) {
-+      oldHook.state = oldHook.updateQueue.forceUpdate(oldHook.state);
++    oldHook.state = oldHook.updateQueue.forceUpdate(oldHook.state);
 +  } else {
-+      newHook = {
-+          state: initialValue,
-+          updateQueue: new UpdateQueue()
-+      };
++    newHook = {
++      state: initialValue,
++      updateQueue: new UpdateQueue()
++    };
 +  }
 +  const dispatch = action => {
-+      newHook.updateQueue.enqueueUpdate(
-+          new Update(reducer ? reducer(newHook.state, action) : action)
-+      );
-+      scheduleRoot();
++    newHook.updateQueue.enqueueUpdate(
++      new Update(reducer ? reducer(newHook.state, action) : action)
++    );
++    scheduleRoot();
 +  }
 +  workInProgressFiber.hooks[hookIndex++] = newHook;
 +  return [newHook.state, dispatch];
