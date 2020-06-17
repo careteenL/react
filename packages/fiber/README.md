@@ -1,5 +1,7 @@
 # 由浅入深React的Fiber架构
 
+![fiber-cover](./assets/fiber-cover.png)
+
 目的是初识fiber并实现react基础功能，请带着下面几个问题去阅读此文。
 - React15存在哪些痛点？Fiber是什么？React16为什么需要引入Fiber？
 - 如何实现React16下的虚拟DOM？
