@@ -9,10 +9,10 @@
 - 如何实现Fiber架构下的组件渲染和副作用收集提交？
 - 如何实现Fiber中的调和和双缓冲优化策略？
 - 如何实现useReducer和useState等Hooks？
-- 如何实现expirationTime 任务的优先级 任务调度 超时时间的处理
-- 如何实现reconcile domdiff的优化key处理
-- 如何实现合成事件 SyntheticEvent
-- 如何实现ref useEffect
+- 如何实现expirationTime 任务的优先级 任务调度 超时时间的处理？
+- 如何实现reconcile domdiff的优化key处理？
+- 如何实现合成事件 SyntheticEvent？
+- 如何实现ref useEffect？
 
 ## 目录
 
@@ -489,6 +489,7 @@ console.log(element);
 ### 实现createElement方法
 
 在`babel`编译时将`JSX`语法转为一个对象，然后调用react下的`React.createElement`方法构建虚拟dom。我们可以如下模拟：
+
 ```js
 // core/react.js
 const ELEMENT_TEXT = Symbol.for('ELEMENT_TEXT');
@@ -544,7 +545,7 @@ ReactDOM.render(
 // core/constants.js
 export const ELEMENT_TEXT = Symbol.for('ELEMENT_TEXT'); // 文本元素
 export const TAG_ROOT = Symbol.for('TAG_ROOT'); // 根Fiber
-export const TAG_HOST = Symbol.for('TAG_HOST'); // 原生的节点 span div p  函数组件 类组件
+export const TAG_HOST = Symbol.for('TAG_HOST'); // 原生的节点 span div p 函数组件 类组件
 export const TAG_TEXT = Symbol.for('TAG_TEXT'); // 文本节点
 export const PLACEMENT = Symbol.for('PLACEMENT'); // 插入节点
 ```
@@ -691,7 +692,6 @@ reRender3.addEventListener('click', () => {
 ![fiber-update-process-1](./assets/fiber-update-process-1.jpg)
 ![fiber-update-process-2](./assets/fiber-update-process-2.jpg)
 
-- TODO 过程
 - 将每次渲染完后的fiber树赋值给`currentRoot`
 - 第一次更新时将`rooterFiber`的`alternate`指向`上一次渲染好的currentRoot`
 - 第二次之后的更新将`workInProgressRoot`指向`currentRoot.alternate`，然后将当前的`workInProgressRoot.alternate`指向`上一次渲染好的currentRoot`
@@ -1042,7 +1042,7 @@ function updateFunctionComponent(currentFiber) {
 +    workInProgressFiber.alternate &&
 +    workInProgressFiber.alternate.hooks &&
 +    workInProgressFiber.alternate.hooks[hookIndex];
-+let newHook = oldHook;
++  let newHook = oldHook;
 +  if (oldHook) {
 +    oldHook.state = oldHook.updateQueue.forceUpdate(oldHook.state);
 +  } else {
@@ -1065,7 +1065,35 @@ function updateFunctionComponent(currentFiber) {
 +}
 ```
 
+## 总结
+
+看完上面非常干的简易实现，再来回顾一开始的几个问题：
+- [x] React15存在哪些痛点？Fiber是什么？React16为什么需要引入Fiber？
+  - 渲染和diff阶段一气呵成，节点树庞大时会导致页面卡死
+  - Fiber并不神秘，只是将Virtual-DOM转变为一种链表结构
+  - 链表结构配合requestIdleCallback可实现可中断可恢复的调度机制
+- [x] 如何实现React16下的虚拟DOM？
+  - 同React15
+- [x] 如何实现Fiber的数据结构和遍历算法？
+  - 见[Fiber也是一种数据结构](#Fiber也是一种数据结构)图
+- [x] 如何实现Fiber架构下可中断和可恢复的的任务调度？
+  - [x] 如何指定数量更新？如何批量更新？
+  - 借助requestIdleCallback交由浏览器在一帧渲染后的给出的空闲时间内实现指定数量跟新，批量更新可以直接跳过这个API，按之前的方式
+- [x] 如何实现Fiber架构下的组件渲染和副作用收集提交？
+  - 执行的收集顺序类似于二叉树的先序遍历
+  - 完成的收集顺序类似于二叉树的后序遍历
+- [x] 如何实现Fiber中的调和和双缓冲优化策略？
+  - 在Fiber结构中增加一个alternate字段标识上一次渲染好的Fiber树，下次渲染时可复用
+- [x] 如何实现useReducer和useState等Hooks？
+- [ ] 如何实现expirationTime 任务的优先级 任务调度 超时时间的处理？
+- [ ] 如何实现reconcile domdiff的优化key处理？
+- [ ] 如何实现合成事件 SyntheticEvent？
+- [ ] 如何实现ref useEffect？
+
+但仍然还有后面几个问题没有解答，下篇文章继续探索...
+
 ## 参考资料
 
+- [facebook/react](https://github.com/facebook/react)
 - [React Fiber架构 -司徒正美](https://zhuanlan.zhihu.com/p/37095662)
 - [这可能是最通俗的 React Fiber(时间分片) 打开方式](https://juejin.im/post/5dadc6045188255a270a0f85)
