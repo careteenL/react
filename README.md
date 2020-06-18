@@ -9,8 +9,11 @@
 
 学习并仿写`react`，目前已提供基础功能。
 
-- [ ] React16
-  - [ ] Fiber
+- [ ] [React16 Fiber](./packages/fiber)
+  - [x] Fiber
+  - [ ] hooks
+    - [x] useReducer
+    - [x] useState
 - [ ] React15
   - [ ] Class Component
     - [x] LifeCycle
@@ -20,8 +23,6 @@
     - [x] syntheticEvent
   - [ ] Function Component
     - [x] basic
-    - [ ] hooks
-      - [ ] useState
   - [x] createElement
   - [x] Children
     - [x] map
