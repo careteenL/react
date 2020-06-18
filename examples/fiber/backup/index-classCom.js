@@ -1,15 +1,15 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
-// import React from '../../../packages/fiber/core/react';
-// import ReactDOM from '../../../packages/fiber/core/react-dom';
+// import React from 'react'
+// import ReactDOM from 'react-dom'
+import React from '../../../packages/fiber/core/react'
+import ReactDOM from '../../../packages/fiber/core/react-dom'
 
 class ClassCounter extends React.Component {
   constructor(props) {
-    super(props);
-    this.state = { number: 0 };
+    super(props)
+    this.state = { number: 0 }
   }
   onClick = () => {
-    this.setState(state => ({ number: state.number + 1 }));
+    this.setState(state => ({ number: state.number + 1 }))
   }
   render() {
     return (
@@ -23,4 +23,4 @@ class ClassCounter extends React.Component {
 ReactDOM.render(
   <ClassCounter />,
   document.getElementById('root')
-);
+)

@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-// import React from '../../../packages/fiber/core/react';
-// import ReactDOM from '../../../packages/fiber/core/react-dom';
+// import React from '../../../packages/fiber/core/react'
+// import ReactDOM from '../../../packages/fiber/core/react-dom'
 
 function FunctionCounter() {
   return (
@@ -13,4 +13,4 @@ function FunctionCounter() {
 ReactDOM.render(
   <FunctionCounter />,
   document.getElementById('root')
-);
+)

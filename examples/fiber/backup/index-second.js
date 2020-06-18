@@ -1,9 +1,9 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
-// import React from '../../../packages/fiber/core/react';
-// import ReactDOM from '../../../packages/fiber/core/react-dom';
+// import React from 'react'
+// import ReactDOM from 'react-dom'
+import React from '../../../packages/fiber/core/react'
+import ReactDOM from '../../../packages/fiber/core/react-dom'
 
-let style = { border: '3px solid green', margin: '5px' };
+let style = { border: '3px solid green', margin: '5px' }
 let element = (
   <div id="A1" style={style}>
     A1
@@ -18,9 +18,9 @@ let element = (
 ReactDOM.render(
   element,
   document.getElementById('root')
-);
+)
 
-let reRender2 = document.getElementById('reRender2');
+let reRender2 = document.getElementById('reRender2')
 reRender2.addEventListener('click', () => {
   let element2 = (
     <div id="A1-new" style={style}>
@@ -37,10 +37,10 @@ reRender2.addEventListener('click', () => {
   ReactDOM.render(
     element2,
     document.getElementById('root')
-  );
-});
+  )
+})
 
-let reRender3 = document.getElementById('reRender3');
+let reRender3 = document.getElementById('reRender3')
 reRender3.addEventListener('click', () => {
   let element3 = (
     <div id="A1-new2" style={style}>
@@ -56,6 +56,6 @@ reRender3.addEventListener('click', () => {
   ReactDOM.render(
     element3,
     document.getElementById('root')
-  );
-});
+  )
+})
 

@@ -1,26 +1,26 @@
 function setProp(dom, key, value) {
   if (/^on/.test(key)) {
-    dom[key.toLowerCase()] = value;
+    dom[key.toLowerCase()] = value
   } else if (key === 'style') {
     if (value) {
       for (let styleName in value) {
         if (value.hasOwnProperty(styleName)) {
-          dom.style[styleName] = value[styleName];
+          dom.style[styleName] = value[styleName]
         }
       }
     }
   } else {
-    dom.setAttribute(key, value);
+    dom.setAttribute(key, value)
   }
-  return dom;
+  return dom
 }
 export function setProps(elem, oldProps, newProps) {
   for (let key in oldProps) {
     if (key !== 'children') {
       if (newProps.hasOwnProperty(key)) {
-        setProp(elem, key, newProps[key]);
+        setProp(elem, key, newProps[key])
       } else {
-        elem.removeAttribute(key);
+        elem.removeAttribute(key)
       }
     }
   }

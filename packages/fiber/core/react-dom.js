@@ -1,5 +1,5 @@
-import { TAG_ROOT } from './constants';
-import { scheduleRoot } from './scheduler';
+import { TAG_ROOT } from './constants'
+import { scheduleRoot } from './scheduler'
 
 function render(element, container) {
   let rootFiber = {
@@ -7,7 +7,7 @@ function render(element, container) {
     stateNode: container, // 此Fiber对应的DOM节点
     props: { children: [element] }, // 子元素就是要渲染的element
   }
-  scheduleRoot(rootFiber);
+  scheduleRoot(rootFiber)
 }
 
 export default {
