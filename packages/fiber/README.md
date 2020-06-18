@@ -1013,6 +1013,8 @@ ReactDOM.render(
 )
 
 ```
+期望的效果为实现两个互不影响的计数器
+![useReducer-result](./assets/useReducer-result.gif)
 需要react提供`useState/useReducer`两个Hook
 ```diff
 // core/react.js
