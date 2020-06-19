@@ -339,6 +339,8 @@ function beginWork (fiber) {
   console.log('start: ', fiber.key) // A1 B1 C1 C2 B2
 }
 ```
+
+![fiber-render-complete](./assets/fiber-render-complete.jpg)
 完成的收集顺序如下
 > 类似[二叉树的后序遍历](https://github.com/careteenL/data-structure_algorithm/blob/0816-leetcode/src/data-structure/binary-search-tree.js#L163)
 ```js

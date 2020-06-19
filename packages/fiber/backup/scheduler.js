@@ -123,22 +123,22 @@ function updateDOM(stateNode, oldProps, newProps) {
 function completeUnitOfWork(currentFiber) {
   const returnFiber = currentFiber.return
   if (returnFiber) {
-    if (!returnFiber.firstEffect) {
+    if (!returnFiber.firstEffect) { // 1.1 / 2.1 / 3.1
       returnFiber.firstEffect = currentFiber.firstEffect
     }
-    if (!!currentFiber.lastEffect) {
-      if (!!returnFiber.lastEffect) {
+    if (!!currentFiber.lastEffect) { // 2.2 / 3.2
+      if (!!returnFiber.lastEffect) { // 3.3
         returnFiber.lastEffect.nextEffect = currentFiber.firstEffect
       }
-      returnFiber.lastEffect = currentFiber.lastEffect
+      returnFiber.lastEffect = currentFiber.lastEffect // 2.3 // 3.4
     }
 
-    const effectTag = currentFiber.effectTag
+    const effectTag = currentFiber.effectTag // 1.2 / 2.4 / 3.5
     if (effectTag) {
-      if (!!returnFiber.lastEffect) {
+      if (!!returnFiber.lastEffect) { // 3.6
         returnFiber.lastEffect.nextEffect = currentFiber
       } else {
-        returnFiber.firstEffect = currentFiber
+        returnFiber.firstEffect = currentFiber // 1.3 / 2.4
       }
       returnFiber.lastEffect = currentFiber
     }
