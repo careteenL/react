@@ -1,11 +1,27 @@
 # React
 
 - 发展历程
-  - react0.3 版本有哪些功能
-  - react15
-  - react16
-  - react17
-  - react18
+  - 0.3 - 0.14（2013 - 2016）
+    - jsx
+    - 函数组件，但无状态
+    - 提供 propTypes 做组件属性类型检查
+  - react15（2016 - ）
+    - 提供 dangerousSetInnerHtml 插入原始 dom，类似于 vue 的 v-html
+    - 提供 createPortal 支持组件可以渲染到父组件以外的 dom 节点
+  - react16（2017 重要）
+    - 引入异步渲染和 fiber 架构
+  - react16.3（2018.3）
+    - 引入 context api，更好管理状态和数据共享
+  - react16.6（2018.11）
+    - 引入 memo、lazy 做性能优化
+  - react16.8（2019.2）
+    - 引入 hooks，函数组件支持生命周期和使用状态
+  - react17（2020）
+    - 解决了现有问题
+  - react18（2022）
+    - 引入并发模式 concurrent mode
+    - setState 自动批处理
+    - 并发模式相关新 hook：useTransition、useDeferredValue
 - react 类组件
 - react 函数组件
 - jsx 虚拟 dom
@@ -13,6 +29,7 @@
   - 诞生的原因：react15 前有性能瓶颈，一次性收集和更新所有的改动，屏幕的刷新率是 1s60 次，也就是一帧渲染是 16.6ms，如果一帧渲染时间超过这个值，用户就会感知到页面的卡顿，所以需要对改动做拆分成一个个很小的任务，分布在每一帧里，也就是做时间切片。
   - 实现：利用一帧在渲染时是有 样式的计算、布局、绘制，然后还有一个空闲阶段，使用 window.requestIdleCallback 则可以利用这部分时间。
   - 双缓冲机制：复用前一个节点，节省空间
+- hook
 - 合成事件
   - 事件流：事件捕获、目标阶段、事件冒泡
   - 事件代理：利用事件冒泡特性
@@ -30,10 +47,14 @@
   - 处理超时时间
     - 超时的先执行，再执行优先级高的
     - 超时的会一气呵成执行，不能中断
+  - 高优先级打断低优先级
+  - 使用过期时间来解决饥饿问题（低优先级任务多次被高优先任务中断，而得不到执行）
+    - 每个优先级都有一个过期时间，如果在过期时间内没得到执行，则会将优先级提升为同步，即马上执行
 - 数据结构和算法
   - 链表
     - 构建 fiber 类似于二叉树的先序遍历
     - fiber 的完成收集 类似于二叉树的后续遍历，需要保证子节点先完成，再创建父节点
+    - 构建 hook
   - 循环链表
     - 实现 this.setState 批量更新
   - dfs
@@ -59,3 +80,6 @@
 ## 资料
 
 - [React 基础与进阶 juejin 伢羽](https://juejin.cn/column/7142674773930147853)
+- [React18 新特性介绍&&升级指南](https://juejin.cn/post/7104917497530286111)
+  - [React18 并发模式 demo 代码](https://codesandbox.io/p/sandbox/winter-cherry-ss-forked-pxnphz?file=%2Fsrc%2Findex.js)
+- [彻底搞懂 React 18 并发机制的原理 - 神光](https://juejin.cn/post/7171231346361106440)
