@@ -1,5 +1,7 @@
 # React
 
+## React
+
 - 发展历程
   - 0.3 - 0.14（2013 - 2016）
     - jsx
@@ -77,9 +79,41 @@
 - 水合 hydration
   - ssr 在服务端先注水（调接口）再脱水（转成字符串），发送到客户端后再注水（调动态接口）
 
-## 资料
+### 资料
 
 - [React 基础与进阶 juejin 伢羽](https://juejin.cn/column/7142674773930147853)
 - [React18 新特性介绍&&升级指南](https://juejin.cn/post/7104917497530286111)
   - [React18 并发模式 demo 代码](https://codesandbox.io/p/sandbox/winter-cherry-ss-forked-pxnphz?file=%2Fsrc%2Findex.js)
 - [彻底搞懂 React 18 并发机制的原理 - 神光](https://juejin.cn/post/7171231346361106440)
+
+## Router
+
+- react-router-dom 发展历程
+  - v3
+  - v4
+  - v5
+  - v6
+- 路由模式
+  - HashRouter
+  - BrowserRouter
+  - 使用 aop 的思想，重写原生的 onhashchange、popState 事件，然后触发 react 的 render
+- path-to-regexp
+  - 使用正则解析 /user/:id/:key 路径的匹配和对应字段取值
+- \*通配优先级最低，路由深度越大优先级越高，优先级主要是对路由做排序，然后渲染的时候从上往下匹配
+
+### 资料
+
+- [官方文档](https://github.com/remix-run/react-router)
+- [React Router 6 重磅来袭（15 分钟了解它的前世今生和未来）](https://zhuanlan.zhihu.com/p/433876168)
+
+## Redux
+
+### 资料
+
+## Dva
+
+### 资料
+
+## Umi
+
+### 资料
