@@ -78,6 +78,11 @@
     - 实现合成事件的事件流执行顺序
 - 水合 hydration
   - ssr 在服务端先注水（调接口）再脱水（转成字符串），发送到客户端后再注水（调动态接口）
+- createContext
+  - Provider
+  - Consumer useContext
+  - 只对 provider 包裹的子组件生效，在外面取值是初始化的
+  - antd 的 form 使用 context 实现
 
 ### 资料
 
@@ -115,5 +120,7 @@
 ### 资料
 
 ## Umi
+
+- keep alive 方案
 
 ### 资料
