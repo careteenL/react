@@ -64,7 +64,7 @@
     - 构建 fiber
   - 最小堆
     - 实现根据 lane 调度优先级
-    - lane 使用二级制表示，值越小，优先级越高
+    - lane 使用二进制表示，值越小，优先级越高
   - 位运算
     - 原码、反码、补码
       - 使用补码来实现加法代替减法
@@ -91,7 +91,7 @@
   - [React18 并发模式 demo 代码](https://codesandbox.io/p/sandbox/winter-cherry-ss-forked-pxnphz?file=%2Fsrc%2Findex.js)
 - [彻底搞懂 React 18 并发机制的原理 - 神光](https://juejin.cn/post/7171231346361106440)
 
-## Router
+## React-Router-Dom
 
 - react-router-dom 发展历程
   - v3
@@ -105,6 +105,7 @@
 - path-to-regexp
   - 使用正则解析 /user/:id/:key 路径的匹配和对应字段取值
 - \*通配优先级最低，路由深度越大优先级越高，优先级主要是对路由做排序，然后渲染的时候从上往下匹配
+- outlet
 
 ### 资料
 
@@ -122,5 +123,20 @@
 ## Umi
 
 - keep alive 方案
+  - KeepAliveLayout
+  - 需要缓存的路由
+  - patchKeepAlive
+  - dropByCacheKey
 
 ### 资料
+
+## react ssr
+
+- 利于 seo；加快首屏渲染；
+- 同构，build client server 两份代码
+- 处理 router
+- 处理 redux
+- 处理样式
+  - iso-style-loader
+- 处理 tdk
+  - react-helmet
