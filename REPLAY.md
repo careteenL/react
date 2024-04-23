@@ -135,8 +135,51 @@
 - 利于 seo；加快首屏渲染；
 - 同构，build client server 两份代码
 - 处理 router
+  - staticRouter 做包裹，并传 ctx.path ，使访问服务端对应路由时能让客户端路由修正正确
 - 处理 redux
+  - 在组件和路由处 定义 loadData 函数去 dispatch 获取异步数据，然后进行返回
+  - 在服务端中调用 loadData 函数得到数据，进而存放在 window.context.state 中
+  - 客户端在访问时，优先从 window.context.state 获取并赋值给 redux 的 defaultState
 - 处理样式
   - iso-style-loader
 - 处理 tdk
   - react-helmet
+
+## nextjs
+
+- csr client side render 客户端渲染
+  - 服务端返回空节点，客户端进行渲染
+  - 首屏加载时间会比较慢，不利于 seo
+- ssr server side render 服务端渲染
+  - 同上方 react ssr
+- ssg static site generate 静态站点生成
+  - 渲染最快，适合内容不常变化的页面
+  - 使用 getStaticProps 给服务端传递数据，服务端根据数据生成页面后再 build 出来
+  - 动态路由时还需使用 getStaticPaths 来获取需要预渲染的路径
+- isr increase static 增量静态生成
+  - 结合 ssr 和 ssg 在性能和内容更新之间做了平衡
+  - 使用方式与 ssg 类似
+  - getStaticProps 时返回 revalidate 即重新校验的时间，每间隔会重新生成
+  - getStaticPaths 时返回 fallback: blocking 表示当渲染未被预渲染的路径时，会等待 getStaticProps 完成并生成该页面，再提供给用户，也意味着用户需要等待
+- 应用
+  - saas 官网采用 react 去重构 velocity 服务端渲染的方式
+    - velocity 服务端渲染后端为 java，官网项目往往是纯前端展示，其实不需要，故需重构为纯前端控制的 ssr
+  - 官网首页会经常变化，则适合使用 ssr
+  - 合作等页面常年不变，则适合使用 nextjs 的 ssg
+- 服务端相关知识如何考虑？
+  - TODO
+  - 负载均衡？
+  - 如何压测？QPS？
+  - 日活月活多少？
+  - 页面性能各个指标？
+
+### 资料
+
+- [讲清楚 Next.js 里的 CSR, SSR, SSG 和 ISR](https://juejin.cn/post/7273674732447711295)
+- [.next项目服务端渲染部署中的负载均衡实现](https://juejin.cn/post/6844904117123416078)
+
+## 请求库解决方案
+
+- ahooks useRequest
+- useSWR stale-while-revalidate
+- react-query
