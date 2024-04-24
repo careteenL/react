@@ -182,4 +182,11 @@
 
 - ahooks useRequest
 - useSWR stale-while-revalidate
+  - 原理是 http cache-control: max-age=300, stale-while-revalidate=30
+  - 即 300s 内浏览器不会发起请求，而是从磁盘中读取已获取的数据；在 300s-330s 期间再访问仍然会使用缓存结果，与此同时进行异步 revalidate，也就是会发起请求响应会作为下次访问时使用（但是会牺牲这个期间的数据新鲜）；在 330s 后的访问会重新调接口并使用新数据
 - react-query
+
+### 资料
+
+- [聊聊 useSWR，为开发提效 - 包括 useSWR 设计思想、优缺点和最佳实践](https://juejin.cn/post/6943397563114455048)
+- [面试官：请使用 JS 简单实现一套 SWR 机制](https://cloud.tencent.com/developer/article/2047215)
