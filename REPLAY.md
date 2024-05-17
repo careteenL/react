@@ -24,6 +24,15 @@
     - 引入并发模式 concurrent mode
     - setState 自动批处理
     - 并发模式相关新 hook：useTransition、useDeferredValue
+  - react19（2024）
+    - useActionState
+    - use 类似钩子，但可以条件渲染
+    - ref 可以作为属性传递
+    - context 可以直接使用，不用.Provider
+    - 对文档元数据支持，不用再使用 react-helmet，直接写meta/link/title标签元素，会自动提升到 head 标签中
+    - React compiler
+      - react state、props、context 状态变更时，更新机制会从最顶层根节点开始往下递归对比，通过双缓存机制判断出哪些节点发生了变化，然后更新节点。
+      - 解决由于父组件状态变更，而导致子组件 re-render 的场景
 - react 类组件
 - react 函数组件
 - jsx 虚拟 dom
@@ -90,6 +99,8 @@
 - [React18 新特性介绍&&升级指南](https://juejin.cn/post/7104917497530286111)
   - [React18 并发模式 demo 代码](https://codesandbox.io/p/sandbox/winter-cherry-ss-forked-pxnphz?file=%2Fsrc%2Findex.js)
 - [彻底搞懂 React 18 并发机制的原理 - 神光](https://juejin.cn/post/7171231346361106440)
+- [React 19 Beta 都更新了啥](https://mp.weixin.qq.com/s/lFdrgzWEIHJGV71iMqugUg)
+- [苦等三年，React Compiler 终于能用了。使用体验：很爽，但仍有瑕疵](https://mp.weixin.qq.com/s/0ejbUqLFO647aNz7iZFZ6w)
 
 ## React-Router-Dom
 
